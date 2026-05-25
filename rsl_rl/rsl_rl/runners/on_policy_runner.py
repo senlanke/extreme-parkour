@@ -33,7 +33,7 @@ import os
 from collections import deque
 import statistics
 
-# from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.optim as optim
 import wandb
@@ -63,6 +63,7 @@ class OnPolicyRunner:
         self.depth_encoder_cfg = train_cfg["depth_encoder"]
         self.device = device
         self.env = env
+        self.init_wandb = init_wandb
 
         print("Using MLP and Priviliged Env encoder ActorCritic structure")
         actor_critic: ActorCriticRMA = ActorCriticRMA(self.env.cfg.env.n_proprio,
@@ -116,6 +117,23 @@ class OnPolicyRunner:
         self.tot_timesteps = 0
         self.tot_time = 0
         self.current_learning_iteration = 0
+
+    def _ensure_writer(self):
+        if self.log_dir is not None and self.writer is None:
+            self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
+
+    def _log_metrics(self, metrics, step):
+        self._ensure_writer()
+        if self.writer is not None:
+            for key, value in metrics.items():
+                if isinstance(value, torch.Tensor):
+                    if value.numel() != 1:
+                        continue
+                    value = value.item()
+                if isinstance(value, (int, float)):
+                    self.writer.add_scalar(key, value, step)
+        if self.init_wandb:
+            wandb.log(metrics, step=step)
         
 
     def learn_RL(self, num_learning_iterations, init_at_random_ep_len=False):
@@ -128,9 +146,7 @@ class OnPolicyRunner:
         mean_priv_reg_loss = 0. 
         priv_reg_coef = 0.
         entropy_coef = 0.
-        # initialize writer
-        # if self.log_dir is not None and self.writer is None:
-        #     self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
+        self._ensure_writer()
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(self.env.episode_length_buf, high=int(self.env.max_episode_length))
         obs = self.env.get_observations()
@@ -217,10 +233,13 @@ class OnPolicyRunner:
         
         # self.current_learning_iteration += num_learning_iterations
         self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
+        if self.writer is not None:
+            self.writer.flush()
 
     def learn_vision(self, num_learning_iterations, init_at_random_ep_len=False):
         tot_iter = self.current_learning_iteration + num_learning_iterations
         self.start_learning_iteration = copy(self.current_learning_iteration)
+        self._ensure_writer()
 
         ep_infos = []
         rewbuffer = deque(maxlen=100)
@@ -357,7 +376,7 @@ class OnPolicyRunner:
             wandb_dict['Train/mean_reward'] = statistics.mean(locs['rewbuffer'])
             wandb_dict['Train/mean_episode_length'] = statistics.mean(locs['lenbuffer'])
         
-        wandb.log(wandb_dict, step=locs['it'])
+        self._log_metrics(wandb_dict, step=locs['it'])
 
         str = f" \033[1m Learning iteration {locs['it']}/{self.current_learning_iteration + locs['num_learning_iterations']} \033[0m "
 
@@ -412,7 +431,7 @@ class OnPolicyRunner:
         mean_std = self.alg.actor_critic.std.mean()
         fps = int(self.num_steps_per_env * self.env.num_envs / (locs['collection_time'] + locs['learn_time']))
 
-        wandb_dict['Loss/value_function'] = ['mean_value_loss']
+        wandb_dict['Loss/value_function'] = locs['mean_value_loss']
         wandb_dict['Loss/surrogate'] = locs['mean_surrogate_loss']
         wandb_dict['Loss/estimator'] = locs['mean_estimator_loss']
         wandb_dict['Loss/hist_latent_loss'] = locs['mean_hist_latent_loss']
@@ -436,7 +455,7 @@ class OnPolicyRunner:
             # wandb_dict['Train/mean_reward/time', statistics.mean(locs['rewbuffer']), self.tot_time)
             # wandb_dict['Train/mean_episode_length/time', statistics.mean(locs['lenbuffer']), self.tot_time)
 
-        wandb.log(wandb_dict, step=locs['it'])
+        self._log_metrics(wandb_dict, step=locs['it'])
 
         str = f" \033[1m Learning iteration {locs['it']}/{self.current_learning_iteration + locs['num_learning_iterations']} \033[0m "
 

@@ -32,6 +32,10 @@ from legged_gym import LEGGED_GYM_ROOT_DIR
 import os
 import code
 
+# Avoid NVRTC architecture errors from TorchScript fusers on newer GPUs with
+# the legacy PyTorch/CUDA version required by Isaac Gym.
+os.environ.setdefault("PYTORCH_JIT", "0")
+
 import isaacgym
 from legged_gym.envs import *
 from legged_gym.utils import  get_args, export_policy_as_jit, task_registry, Logger

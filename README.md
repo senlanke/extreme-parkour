@@ -70,7 +70,7 @@ Can be used in both IsaacGym and web viewer.
 - --checkpoint: the specific checkpoint you want to load. If not specified load the latest one.
 - --resume: resume from another checkpoint, used together with `--resumeid`.
 - --seed: random seed.
-- --no_wandb: no wandb logging.
+- --tensorboard: use TensorBoard logging instead of wandb.
 - --use_camera: use camera or scandots.
 - --web: used for playing on headless machines. It will forward a port with vscode and you can visualize seemlessly in vscode with your idle gpu or cpu. [Live Preview](https://marketplace.visualstudio.com/items?itemName=ms-vscode.live-server) vscode extension required, otherwise you can view it in any browser.
 
