@@ -29,8 +29,12 @@ pip install "numpy<1.24" pydelatin wandb tqdm opencv-python ipdb pyfqmr flask
 1. Train base policy:  
 ```bash
 python train.py --exptid xxx-xx-WHATEVER --device cuda:0
+python train.py --exptid xxx-xx-WHATEVER --device cuda:0 --tensorboard
 ```
 Train 10-15k iterations (8-10 hours on 3090) (at least 15k recommended).
+
+查看tensorboard：cd ~/HL/extreme-parkour/legged_gym
+tensorboard --logdir logs --port 6006
 
 2. Train distillation policy:
 ```bash

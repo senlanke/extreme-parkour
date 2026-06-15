@@ -82,20 +82,20 @@ def play(args):
                                     "rough stairs up": 0., 
                                     "rough stairs down": 0., 
                                     "discrete": 0., 
-                                    "stepping stones": 0.0,
+                                    "stepping stones": 0.,
                                     "gaps": 0., 
                                     "smooth flat": 0,
                                     "pit": 0.0,
                                     "wall": 0.0,
                                     "platform": 0.,
-                                    "large stairs up": 0.,
+                                    "large stairs up": 1.,
                                     "large stairs down": 0.,
-                                    "parkour": 0.2,
-                                    "parkour_hurdle": 0.2,
+                                    "parkour": 0.,
+                                    "parkour_hurdle": 0.,
                                     "parkour_flat": 0.,
-                                    "parkour_step": 0.2,
-                                    "parkour_gap": 0.2, 
-                                    "demo": 0.2}
+                                    "parkour_step": 0.,
+                                    "parkour_gap": 0.,
+                                    "demo": 0.}
     
     env_cfg.terrain.terrain_proportions = list(env_cfg.terrain.terrain_dict.values())
     env_cfg.terrain.curriculum = False

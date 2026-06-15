@@ -125,6 +125,8 @@ def update_cfg_from_args(env_cfg, cfg_train, args):
     if env_cfg is not None:
         if args.use_camera:
             env_cfg.depth.use_camera = args.use_camera
+        if hasattr(args, "graphics_device_id") and args.graphics_device_id is not None:
+            env_cfg.depth.graphics_device_id = args.graphics_device_id
         if env_cfg.depth.use_camera and args.headless:  # set camera specific parameters
             env_cfg.env.num_envs = env_cfg.depth.camera_num_envs
             env_cfg.terrain.num_rows = env_cfg.depth.camera_terrain_num_rows

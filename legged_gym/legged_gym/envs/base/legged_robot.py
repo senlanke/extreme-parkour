@@ -440,7 +440,9 @@ class LeggedRobot(BaseTask):  # 定义腿式机器人环境主体，集中管理
         """
         self.up_axis_idx = 2  # 指定 z 轴为竖直方向
         if self.cfg.depth.use_camera:  # 只在启用深度相机且到达刷新周期时执行
-            self.graphics_device_id = self.sim_device_id  # 让相机渲染复用仿真 GPU
+            depth_graphics_device_id = getattr(self.cfg.depth, "graphics_device_id", None)  # 允许命令行覆盖相机 graphics device
+            self.graphics_device_id = self.sim_device_id if depth_graphics_device_id is None else depth_graphics_device_id  # 默认跟随仿真 GPU，也可手动指定
+            print(f"Using camera graphics device id: {self.graphics_device_id}")  # 打印相机 graphics device，方便排查 CUDA/graphics 互操作问题
         self.sim = self.gym.create_sim(self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)  # 保存 Isaac Gym 仿真实例
         mesh_type = self.cfg.terrain.mesh_type  # 读取地形网格类型，决定创建分支
         start = time()  # 记录创建地形开始时间
@@ -1116,9 +1118,9 @@ class LeggedRobot(BaseTask):  # 定义腿式机器人环境主体，集中管理
             for i in range(4):  # 逐只脚绘制边缘接触状态
                 pose = gymapi.Transform(gymapi.Vec3(feet_pos[self.lookat_id, i, 0], feet_pos[self.lookat_id, i, 1], feet_pos[self.lookat_id, i, 2]), r=None)  # 创建调试绘制位姿
                 if self.feet_at_edge[self.lookat_id, i]:  # 只有足端踩边状态存在时才绘制该调试层
-                    gymutil.draw_lines(edge_geom, self.gym, self.viewer, self.envs[i], pose)  # 把调试几何体绘制到 viewer 中
+                    gymutil.draw_lines(edge_geom, self.gym, self.viewer, self.envs[self.lookat_id], pose)  # 把调试几何体绘制到 viewer 中
                 else:  # 当前条件未命中时走默认处理路径
-                    gymutil.draw_lines(non_edge_geom, self.gym, self.viewer, self.envs[i], pose)  # 把调试几何体绘制到 viewer 中
+                    gymutil.draw_lines(non_edge_geom, self.gym, self.viewer, self.envs[self.lookat_id], pose)  # 把调试几何体绘制到 viewer 中
 
     def _init_height_points(self):  # 定义高度采样点初始化逻辑
         """ Returns points at which the height measurments are sampled (in base frame)

@@ -349,6 +349,10 @@ class Terrain:
             env_origin_z = np.max(terrain.height_field_raw[x1:x2, y1:y2])*terrain.vertical_scale
         self.env_origins[i, j] = [env_origin_x, env_origin_y, env_origin_z]
         self.terrain_type[i, j] = terrain.idx
+        if not hasattr(terrain, "goals"):
+            goal_x = np.linspace(1.0, min(self.env_length - 1.0, 1.0 + 0.7 * (self.num_goals - 1)), self.num_goals)
+            goal_y = np.full(self.num_goals, self.env_width / 2.0)
+            terrain.goals = np.stack((goal_x, goal_y), axis=1)
         self.goals[i, j, :, :2] = terrain.goals + [i * self.env_length, j * self.env_width]
         # self.env_slope_vec[i, j] = terrain.slope_vector
 
